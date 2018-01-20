@@ -86,10 +86,10 @@ hexo已经安装成功了，已经默认有一个hello world了。可以到你�
 
 关于配置的详细信息[hexo官方配置文档](https://hexo.io/zh-cn/docs/configuration.html)，下面是必须改动的地方:
 
-```
+```shell
 deploy: # 部署相关配置
     type: git # 使用 Git 提交
-    repo: https://github.com/xxx/xxx.github.io.git # 就是存放博客的仓库地址
+    repo: git@github.com:xxx/xxx.github.io.git # 就是存放博客的仓库地址
 ```
 
 改动好配置文件，就可以往github上发布了，发布hexo也已经帮我们解决了，使用如下命令即可

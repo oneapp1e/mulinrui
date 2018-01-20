@@ -98,11 +98,11 @@ hexo支持多分支部署，那么第二步生成静态文件部署到站点的�
    # 使用 Git 提交
  - type: git
    # 就是存放博客的仓库地址
-   repo: https://github.com/xxx/xxx.github.io.git
+   repo: git@github.com:xxx/xxx.github.io.git
    # 主分支
    branch: master
  - type: git
-   repo: https://github.com/xxx/xxx.github.io.git
+   repo: git@github.com:xxx/xxx.github.io.git
    # 源码分支
    branch: source
    extend_dirs: /
