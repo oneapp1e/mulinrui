@@ -86,6 +86,14 @@ theme: next
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   # 使用 Git 提交
-  type: git
+ - type: git
   # 就是存放博客的仓库地址
-  repository: https://github.com/oneapp1e/oneapp1e.github.io.git 
+   repo: https://github.com/oneapp1e/oneapp1e.github.io.git
+   branch: master
+ - type: git
+   repo: https://github.com/oneapp1e/oneapp1e.github.io.git
+   branch: source
+   extend_dirs: /
+   ignore_hidden: false
+   ignore_pattern:
+       public: .
