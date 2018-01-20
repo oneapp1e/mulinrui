@@ -1,5 +1,6 @@
 ---
 title: 搭建hexo+github+next博客
+date: 2018-01-19 14:37:36
 tags:
   - Android
   - Hexo
