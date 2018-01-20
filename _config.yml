@@ -79,7 +79,7 @@ pagination_dir: page
 # 配置站点所用主题和插件，这里将默认主题注释，修改为 next
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
+theme: next
 
 # Deployment
 # 本地博客部署到 github 上要配置这里
