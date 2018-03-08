@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Android,进程,保活,守护," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="前言​    Android开发app，都会遇到这样的需求，怎么才能让我们的产品在用户的手机上停留的时间够长，怎么提升留存，怎么提升推送到达率等等。这些问题提出的根源还是在于Android的碎片化严重还有就是Google在中国不能使用，因此国内就出来了很多各个厂商自己定制的系统，各种鱼龙混杂的推送，而最近发布的Android系统又收紧各种权限，各个厂商为了提升性能，各种优化，最后导致的问题就是ap">
+<meta name="keywords" content="Android,进程,保活,守护">
+<meta property="og:type" content="article">
+<meta property="og:title" content="双进程守护">
+<meta property="og:url" content="http://yoursite.com/2018/02/02/双进程守护/index.html">
+<meta property="og:site_name" content="程序员木木">
+<meta property="og:description" content="前言​    Android开发app，都会遇到这样的需求，怎么才能让我们的产品在用户的手机上停留的时间够长，怎么提升留存，怎么提升推送到达率等等。这些问题提出的根源还是在于Android的碎片化严重还有就是Google在中国不能使用，因此国内就出来了很多各个厂商自己定制的系统，各种鱼龙混杂的推送，而最近发布的Android系统又收紧各种权限，各个厂商为了提升性能，各种优化，最后导致的问题就是ap">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-03-06T08:39:29.894Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="双进程守护">
+<meta name="twitter:description" content="前言​    Android开发app，都会遇到这样的需求，怎么才能让我们的产品在用户的手机上停留的时间够长，怎么提升留存，怎么提升推送到达率等等。这些问题提出的根源还是在于Android的碎片化严重还有就是Google在中国不能使用，因此国内就出来了很多各个厂商自己定制的系统，各种鱼龙混杂的推送，而最近发布的Android系统又收紧各种权限，各个厂商为了提升性能，各种优化，最后导致的问题就是ap">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/02/02/双进程守护/"/>
+
+
+
+
+
+  <title>双进程守护 | 程序员木木</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">程序员木木</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">程序员木木</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/02/02/双进程守护/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="慕林瑞">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="程序员木木">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">双进程守护</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-02T10:34:11+08:00">
+                2018-02-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Android高级/" itemprop="url" rel="index">
+                    <span itemprop="name">Android高级</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>​    Android开发app，都会遇到这样的需求，怎么才能让我们的产品在用户的手机上停留的时间够长，怎么提升留存，怎么提升推送到达率等等。这些问题提出的根源还是在于Android的碎片化严重还有就是Google在中国不能使用，因此国内就出来了很多各个厂商自己定制的系统，各种鱼龙混杂的推送，而最近发布的Android系统又收紧各种权限，各个厂商为了提升性能，各种优化，最后导致的问题就是app进程被系统回收，推送服务达不到要求等等。</p>
+<p>​    虽然现在再写这篇文章有点晚，在最新的Android8.0系统上还没有更好的办法进行保活，但还是要总结一下自己走过的坑。</p>
+<h2 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h2><p>​    在进行进程保活之前，先来熟悉一下进程的权限提升，来保证app的进程不那么快被回收。</p>
+<p>​    <strong>进程的优先级根据重要性层次结构分为5级：</strong></p>
+<p>​        1.前台进程</p>
+<p>​        2.可见进程</p>
+<p>​        3.服务进程</p>
+<p>​        4.后台进程</p>
+<p>​        5.空进程</p>
+<p>​        参考:<a href="https://developer.android.google.cn/guide/components/processes-and-threads.html?hl=zh-cn" target="_blank" rel="noopener">Android官方文档</a></p>
+<p>​    那么进程提升权限的方法就是尽量提升进程等级来保护进程不被回收。</p>
+<p><strong>提权方法：</strong></p>
+<ol>
+<li><p><strong>配置服务优先级</strong></p>
+<p>在manifest中配置服务的过滤器</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;service android:name=<span class="string">".main.service.InnnerService"</span> &gt; </span><br><span class="line">	&lt;intent-filter android:priority=<span class="string">"1000"</span>&gt;</span><br><span class="line">     	&lt;action android:name=<span class="string">"com.mlr.myservice"</span> /&gt;</span><br><span class="line"> 	&lt;/intent-filter&gt;</span><br><span class="line"> &lt;/service&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>将服务设置为前台进程</strong></p>
+<p>Android文档:托管正在“前台”运行的 <code>Service</code>（服务已调用 <code>startForeground()</code>）</p>
+<p>新建一个ForegroundService通过调用 <code>startForeground()</code> 方法使service成为前台进程</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">super</span>.onCreate();</span><br><span class="line">    <span class="comment">//让服务变成前台服务</span></span><br><span class="line">    LogUtils.e(<span class="string">" ForegroundService 服务提权已经启动 "</span>);</span><br><span class="line">    startForeground(<span class="number">10</span>, <span class="keyword">new</span> Notification());</span><br><span class="line">    <span class="comment">//如果是18以上的设备  这样操作会在通知栏有一个通知，那再开启个服务把通知干掉</span></span><br><span class="line">    <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.JELLY_BEAN_MR2) &#123;</span><br><span class="line">        startService(<span class="keyword">new</span> Intent(getApplicationContext(), InnnerService.class));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果是18以上的设备通过 <code>startForeground()</code> 方法，会在系统通知栏生成一条通知，为了去除通知启动一个 <code>InnnerService</code> 使用同一个 <code>noticeId</code> ,在 <code>stopself</code> </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">InnnerService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate();</span><br><span class="line">        <span class="comment">//使用同一个通知id</span></span><br><span class="line">        startForeground(<span class="number">10</span>, <span class="keyword">new</span> Notification());</span><br><span class="line">        stopSelf();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>​</p>
+</li>
+<li><p><strong>Activity提权</strong></p>
+<p>​    启动一个一个像素透明的activity，由于要不影响用户其他操作，因此只能锁屏后提权，在用户解锁后销毁掉，否则不销毁在用户开屏的时间会直接打开app。</p>
+<p>​    新建KeepActivity设置宽高一像素</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Window window = getWindow();</span><br><span class="line">window.setGravity(Gravity.LEFT | Gravity.TOP);</span><br><span class="line"><span class="comment">//宽高设置1</span></span><br><span class="line">WindowManager.LayoutParams attributes = window.getAttributes();</span><br><span class="line">attributes.width = <span class="number">1</span>;</span><br><span class="line">attributes.height = <span class="number">1</span>;</span><br><span class="line">attributes.x = <span class="number">0</span>;</span><br><span class="line">attributes.y = <span class="number">0</span>;</span><br><span class="line">window.setAttributes(attributes);</span><br></pre></td></tr></table></figure>
+<p>​    在manifest中注册</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;activity</span><br><span class="line">    android:name=<span class="string">".main.keep.KeepActivity"</span></span><br><span class="line">    android:excludeFromRecents=<span class="string">"true"</span></span><br><span class="line">    android:taskAffinity=<span class="string">"com.mlr.demo.keep"</span></span><br><span class="line">    android:theme=<span class="string">"@style/KeepTheme"</span> /&gt;</span><br></pre></td></tr></table></figure>
+<p>​    Theme设置</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;style name=<span class="string">"KeepTheme"</span>&gt;</span><br><span class="line">    &lt;item name="android:windowBackground"&gt;@null&lt;/item&gt;</span><br><span class="line">    &lt;item name="android:windowIsTranslucent"&gt;true&lt;/item&gt;</span><br><span class="line">&lt;/style&gt;</span><br></pre></td></tr></table></figure>
+<p>​</p>
+</li>
+</ol>
+<h2 id="双进程保活"><a href="#双进程保活" class="headerlink" title="双进程保活"></a>双进程保活</h2><pre><code>双进程保活机制是使用的aidl机制，本地进程和远程进程通过AIDL通信建立连接，本地进程被kill后，远程的进程收到 `onServiceDisconnected` 连接断开的通知，那么远程进程在此时重启本地进程并重新建立连接，同理远程进程被kill后，本地可可以如此处理。这种机制也已经被大厂ROM给限制的差不多了。慎用吧。
+</code></pre><p>​    新建 <code>loclService</code> 同时对service进行的提权处理:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LocalService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> MyBind mMyBind;</span><br><span class="line">    <span class="keyword">private</span> MyConn mMyConn;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Nullable</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> mMyBind;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onCreate();</span><br><span class="line">        LogUtils.setDebugable(<span class="keyword">true</span>);</span><br><span class="line">        LogUtils.e(<span class="string">"testbbs 本地服务启动了"</span>);</span><br><span class="line"></span><br><span class="line">        mMyBind = <span class="keyword">new</span> MyBind();</span><br><span class="line">        <span class="keyword">if</span> (mMyConn == <span class="keyword">null</span>) &#123;</span><br><span class="line">            mMyConn = <span class="keyword">new</span> MyConn();</span><br><span class="line">        &#125;</span><br><span class="line">        startForeground(<span class="number">20</span>, <span class="keyword">new</span> Notification());</span><br><span class="line">        <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.JELLY_BEAN_MR2) &#123;</span><br><span class="line">            startService(<span class="keyword">new</span> Intent(<span class="keyword">this</span>, InnerService.class));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">onStartCommand</span><span class="params">(Intent intent, <span class="keyword">int</span> flags, <span class="keyword">int</span> startId)</span> </span>&#123;</span><br><span class="line">        bindService(<span class="keyword">new</span> Intent(LocalService.<span class="keyword">this</span>, RemoteService.class), mMyConn, BIND_IMPORTANT);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">super</span>.onStartCommand(intent, flags, startId);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">MyBind</span> <span class="keyword">extends</span> <span class="title">IProgressService</span>.<span class="title">Stub</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> String <span class="title">getServiceName</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="string">"LocalService"</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">class</span> <span class="title">MyConn</span> <span class="keyword">implements</span> <span class="title">ServiceConnection</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceConnected</span><span class="params">(ComponentName name, IBinder service)</span> </span>&#123;</span><br><span class="line">            LogUtils.e(<span class="string">"testbbs 连接远程服务开始"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onServiceDisconnected</span><span class="params">(ComponentName name)</span> </span>&#123;</span><br><span class="line">            LogUtils.e(<span class="string">"testbbs 远程服务被杀死了"</span>);</span><br><span class="line">            Toast.makeText(LocalService.<span class="keyword">this</span>, <span class="string">"远程服务被杀死了!"</span>, Toast.LENGTH_SHORT).show();</span><br><span class="line">            <span class="comment">//启动远程服务  绑定远程服务</span></span><br><span class="line">            startService(<span class="keyword">new</span> Intent(LocalService.<span class="keyword">this</span>, RemoteService.class));</span><br><span class="line">            <span class="keyword">if</span> (mMyConn == <span class="keyword">null</span>) &#123;</span><br><span class="line">                mMyConn = <span class="keyword">new</span> MyConn();</span><br><span class="line">            &#125;</span><br><span class="line">            bindService(<span class="keyword">new</span> Intent(LocalService.<span class="keyword">this</span>, RemoteService.class), mMyConn,</span><br><span class="line">                    BIND_IMPORTANT);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">InnerService</span> <span class="keyword">extends</span> <span class="title">Service</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Nullable</span></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> IBinder <span class="title">onBind</span><span class="params">(Intent intent)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>.onCreate();</span><br><span class="line">            startForeground(<span class="number">20</span>, <span class="keyword">new</span> Notification());</span><br><span class="line">            stopSelf();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>​    同理新建 <code>RemoteService</code> ，忘了最重要的了，新建AIDL文件(这个是第一步啊)：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.example.progressdaemon;</span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">IProgressService</span> </span>&#123;</span><br><span class="line">	<span class="function">String <span class="title">getServiceName</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="使用JobScheduler保活"><a href="#使用JobScheduler保活" class="headerlink" title="使用JobScheduler保活"></a>使用JobScheduler保活</h2><p>​    JobScheduler是Android5.0以后提供的方法，JobScheduler是允许在特定状态与特定时间间隔周期执行任务。可以理解为：开启的一个系统的定时器。但是在国内大厂的rom上表现不佳。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">startJob</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">    JobScheduler jobScheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);</span><br><span class="line">    <span class="keyword">if</span> (android.os.Build.VERSION.SDK_INT &gt;= android.os.Build.VERSION_CODES.LOLLIPOP) &#123;</span><br><span class="line">        JobInfo.Builder builder = <span class="keyword">new</span> JobInfo.Builder(<span class="number">10</span>, <span class="keyword">new</span> ComponentName(context.getPackageName(),</span><br><span class="line">                MyJobService.class.getName())).setPersisted(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//小于7.0</span></span><br><span class="line">        <span class="keyword">if</span> (Build.VERSION.SDK_INT &lt; <span class="number">24</span>) &#123;</span><br><span class="line">            builder.setPeriodic(<span class="number">1_000</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            builder.setMinimumLatency(<span class="number">1_000</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        jobScheduler.schedule(builder.build());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>​    注意manifest中需要在service中添加权限android.permission.BIND_JOB_SERVICE</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;service</span><br><span class="line">    android:name=<span class="string">".main.Jobschuduler.MyJobService"</span></span><br><span class="line">    android:exported=<span class="string">"false"</span></span><br><span class="line">    android:permission=<span class="string">"android.permission.BIND_JOB_SERVICE"</span> /&gt;</span><br></pre></td></tr></table></figure>
+<p>​    新建一个jobService</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyJobService</span> <span class="keyword">extends</span> <span class="title">JobService</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String TAG = <span class="string">"MyJobService"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onStartJob</span><span class="params">(JobParameters params)</span> </span>&#123;</span><br><span class="line">        LogUtils.e(TAG + <span class="string">" 开启job"</span>);</span><br><span class="line">        <span class="comment">//7.0以上 轮询</span></span><br><span class="line">        <span class="keyword">if</span> (Build.VERSION.SDK_INT &gt;= <span class="number">24</span>) &#123;</span><br><span class="line">            JobHelper.startJob(<span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">onStopJob</span><span class="params">(JobParameters params)</span> </span>&#123;</span><br><span class="line">        LogUtils.e(TAG + <span class="string">" job 停止了"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="账户同步保活"><a href="#账户同步保活" class="headerlink" title="账户同步保活"></a>账户同步保活</h2><p>​    这个对于没有帐号同步需求的app，去做一个帐号同步功能会给用户一个很不好的体验的，具体看需求吧。</p>
+<p>​    添加账户同步功能比较复杂：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 添加一个账户</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">addAccount</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">    AccountManager accountManager = (AccountManager) context.getSystemService(Context.ACCOUNT_SERVICE);</span><br><span class="line">    String ACCOUNT_TYPE = context.getResources().getString(R.string.account_type);</span><br><span class="line">    Account[] accounts = accountManager.getAccountsByType(ACCOUNT_TYPE);</span><br><span class="line">    <span class="keyword">if</span> (accounts.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        LogUtils.e(TAG + <span class="string">" 账户已经存在"</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//如果账户不存在 给这个账户类型添加一个帐户</span></span><br><span class="line">    Account mlr = <span class="keyword">new</span> Account(ACCOUNT, ACCOUNT_TYPE);</span><br><span class="line">    accountManager.addAccountExplicitly(mlr, PASSWORD, <span class="keyword">new</span> Bundle());</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 设置 账户自动同步</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">autoSync</span><span class="params">(Context context)</span> </span>&#123;</span><br><span class="line">    AccountManager accountManager = (AccountManager) context.getSystemService(Context.ACCOUNT_SERVICE);</span><br><span class="line">    String ACCOUNT_TYPE = context.getResources().getString(R.string.account_type);</span><br><span class="line">    String AUTHORITY = context.getResources().getString(R.string.authority);</span><br><span class="line">    Account[] accounts = accountManager.getAccountsByType(ACCOUNT_TYPE);</span><br><span class="line">    <span class="keyword">if</span> (accounts.length &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        Account account = accounts[<span class="number">0</span>];</span><br><span class="line">        <span class="comment">//设置同步</span></span><br><span class="line">        ContentResolver.setIsSyncable(account, AUTHORITY, <span class="number">1</span>);</span><br><span class="line">        <span class="comment">//自动同步</span></span><br><span class="line">        ContentResolver.setSyncAutomatically(account, AUTHORITY, <span class="keyword">true</span>);</span><br><span class="line">        <span class="comment">//设置同步周期</span></span><br><span class="line">        ContentResolver.addPeriodicSync(account, AUTHORITY, <span class="keyword">new</span> Bundle(), <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>​    还需要在manifest中设置账户授权和同步服务：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&lt;!--账户服务--&gt;</span><br><span class="line">&lt;service android:name=<span class="string">".main.account.AuthenticationService"</span>&gt;</span><br><span class="line"></span><br><span class="line">    &lt;intent-filter&gt;</span><br><span class="line">        &lt;action android:name=<span class="string">"android.accounts.AccountAuthenticator"</span> /&gt;</span><br><span class="line">    &lt;/intent-filter&gt;</span><br><span class="line">    &lt;meta-data</span><br><span class="line">        android:name=<span class="string">"android.accounts.AccountAuthenticator"</span></span><br><span class="line">        android:resource=<span class="string">"@xml/accountauthenticator"</span> /&gt;</span><br><span class="line"></span><br><span class="line">&lt;/service&gt;</span><br><span class="line">&lt;service android:name=<span class="string">".main.account.SyncService"</span>&gt;</span><br><span class="line">    &lt;intent-filter&gt;</span><br><span class="line">        &lt;action android:name=<span class="string">"android.content.SyncAdapter"</span> /&gt;</span><br><span class="line">    &lt;/intent-filter&gt;</span><br><span class="line">    &lt;meta-data</span><br><span class="line">        android:name=<span class="string">"android.content.SyncAdapter"</span></span><br><span class="line">        android:resource=<span class="string">"@xml/sync_adapter"</span> /&gt;</span><br><span class="line">&lt;/service&gt;</span><br><span class="line"></span><br><span class="line">&lt;provider</span><br><span class="line">    android:name=<span class="string">".main.account.SyncProvider"</span></span><br><span class="line">    android:authorities=<span class="string">"com.mlr.progress.daemon.provider"</span> /&gt;</span><br></pre></td></tr></table></figure>
+<p>​    记得到xml中配置 <code>accountauthenticator</code> ，及 <code>sync_adapter</code> 及添加相关权限</p>
+<h2 id="推送保活"><a href="#推送保活" class="headerlink" title="推送保活"></a>推送保活</h2><p>​    根据手机设备不同，在小米手机（包括 MIUI）接入小米推送、华为手机接入华为推送，其他接入个推，极光等可以作为拉活方案的有效补充。</p>
+<h2 id="广播保活"><a href="#广播保活" class="headerlink" title="广播保活"></a>广播保活</h2><p>​    系统经常会发送一些特定的系统广播，如：开屏，锁屏，开机，电量，安装，注册等，通过注册广播监听器，对这些广播进行接收，然后拉活app。</p>
+<p>​    但是Google早已经发现了这个问题，在Android7.0开始对广播进行了限制，8.0更加严格。</p>
+<h2 id="合作保活"><a href="#合作保活" class="headerlink" title="合作保活"></a>合作保活</h2><p>​    有多个合作的app在用户设备上安装，只要开启其中一个，就可以将其他合作的app给拉活。这种方式在大厂出产的app全家桶中都有出现，腾讯系，阿里系，百度系等都有自己的全家桶服务。</p>
+<h2 id="Native层fork保活"><a href="#Native层fork保活" class="headerlink" title="Native层fork保活"></a>Native层fork保活</h2><p>​    在各大厂商的努力合作下，该方式基本不能使用了，不过还是说明一下原理：和双进程守护原理差不多，不过比这更耗电，需要启动一个natice轮询进程，时刻查询app住进程是否存在，不存在就重新创建。</p>
+<hr>
+<p>欢迎大家指正：</p>
+<p><a href="https://github.com/oneapp1e/ProgressDaemon" target="_blank" rel="noopener">https://github.com/oneapp1e/ProgressDaemon</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Android/" rel="tag"># Android</a>
+          
+            <a href="/tags/进程/" rel="tag"># 进程</a>
+          
+            <a href="/tags/保活/" rel="tag"># 保活</a>
+          
+            <a href="/tags/守护/" rel="tag"># 守护</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/01/24/设计模式-1/" rel="next" title="设计模式-1">
+                <i class="fa fa-chevron-left"></i> 设计模式-1
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/03/06/设计模式-2/" rel="prev" title="设计模式-2">
+                设计模式-2 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">慕林瑞</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#提权"><span class="nav-number">2.</span> <span class="nav-text">提权</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#双进程保活"><span class="nav-number">3.</span> <span class="nav-text">双进程保活</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#使用JobScheduler保活"><span class="nav-number">4.</span> <span class="nav-text">使用JobScheduler保活</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#账户同步保活"><span class="nav-number">5.</span> <span class="nav-text">账户同步保活</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#推送保活"><span class="nav-number">6.</span> <span class="nav-text">推送保活</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#广播保活"><span class="nav-number">7.</span> <span class="nav-text">广播保活</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#合作保活"><span class="nav-number">8.</span> <span class="nav-text">合作保活</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Native层fork保活"><span class="nav-number">9.</span> <span class="nav-text">Native层fork保活</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">慕林瑞</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
