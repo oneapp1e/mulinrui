@@ -4,8 +4,8 @@
 
 # Site
 #名称
-title: Android木木
-subtitle: Android木木
+title: 程序员木木
+subtitle: 程序员木木
 description:
 author: 慕林瑞
 # 语言 简体中文
@@ -90,10 +90,10 @@ deploy:
   # 就是存放博客的仓库地址
    repo: git@github.com:oneapp1e/oneapp1e.github.io.git
    branch: master
- - type: git
-   repo: git@github.com:oneapp1e/oneapp1e.github.io.git
-   branch: source
-   extend_dirs: /
-   ignore_hidden: false
-   ignore_pattern:
-       public: .
+# - type: git
+#   repo: git@github.com:oneapp1e/oneapp1e.github.io.git
+#   branch: source
+#   extend_dirs: /
+#   ignore_hidden: false
+#   ignore_pattern:
+ #      public: .
